@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from iqana_demo.api import app  # adjust import if your FastAPI app is elsewhere
+from iqana_demo.api.app import app  # adjust import if your FastAPI app is elsewhere
 
 
 def test_health_ok():

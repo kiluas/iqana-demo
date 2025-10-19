@@ -17,4 +17,6 @@ jobs:
       - run: terraform -chdir=infra/envs/${ENV} validate
       - run: terraform -chdir=infra/envs/${ENV} plan -out tfplan
       - uses: actions/upload-artifact@v4
-        with: { name: tfplan, path: infra/envs/${{ env.ENV }}/tfplan }
+        with:
+          name: tfplan
+          path: infra/envs/${{ env.ENV }}/tfplan
