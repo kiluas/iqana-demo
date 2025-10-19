@@ -1,0 +1,36 @@
+name: web-deploy
+on:
+  push:
+    branches: [main]
+    paths: ["apps/web/**",".github/workflows/web.yml"]
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Build
+        working-directory: apps/web
+        env:
+          VITE_API_BASE:             ${{ vars.VITE_API_BASE }}
+          VITE_COGNITO_DOMAIN:       ${{ vars.VITE_COGNITO_DOMAIN }}
+          VITE_COGNITO_CLIENT_ID:    ${{ vars.VITE_COGNITO_CLIENT_ID }}
+          VITE_COGNITO_REGION:       ${{ vars.VITE_COGNITO_REGION }}
+          VITE_COGNITO_REDIRECT_URI: ${{ vars.VITE_COGNITO_REDIRECT_URI }}
+          VITE_COGNITO_LOGOUT_URI:   ${{ vars.VITE_COGNITO_LOGOUT_URI }}
+        run: |
+          npm ci
+          npm run build
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ vars.AWS_REGION || 'eu-west-3' }}
+      - name: Deploy to S3 + invalidate CloudFront
+        run: |
+          aws s3 sync apps/web/dist "s3://${{ vars.WEB_BUCKET }}/" \
+            --cache-control 'public,max-age=31536000,immutable' --exclude index.html
+          aws s3 cp apps/web/dist/index.html "s3://${{ vars.WEB_BUCKET }}/index.html" \
+            --cache-control 'no-store'
+          aws cloudfront create-invalidation --distribution-id "${{ vars.CLOUDFRONT_ID }}" --paths '/*'

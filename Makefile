@@ -39,4 +39,3 @@ docs: ## Build and serve the documentation
 	@uv run mkdocs serve
 
 .DEFAULT_GOAL := help
-

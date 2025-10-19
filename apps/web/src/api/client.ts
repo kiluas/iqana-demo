@@ -12,7 +12,7 @@ function makeUrl(path: string) {
 function buildHeaders(init?: HeadersInit): Headers {
   const h = new Headers(init);
   h.set("Content-Type", "application/json");
-  const token = getIdToken();            // should return "" if absent
+  const token = getIdToken(); // should return "" if absent
   if (token) h.set("Authorization", `Bearer ${token}`);
   return h;
 }
@@ -20,7 +20,7 @@ function buildHeaders(init?: HeadersInit): Headers {
 async function apiFetch<T>(
   path: string,
   init: RequestInit = {},
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<T> {
   const res = await fetch(makeUrl(path), {
     ...init,
@@ -42,9 +42,10 @@ export function getHealth(signal?: AbortSignal): Promise<HealthResponse> {
   return apiFetch<HealthResponse>("/health", {}, signal);
 }
 
-export function getHoldings(
-  opts?: { refresh?: boolean; signal?: AbortSignal }
-): Promise<HoldingsResponse> {
+export function getHoldings(opts?: {
+  refresh?: boolean;
+  signal?: AbortSignal;
+}): Promise<HoldingsResponse> {
   const refresh = opts?.refresh ? "?refresh=1" : "";
   return apiFetch<HoldingsResponse>(`/holdings${refresh}`, {}, opts?.signal);
 }

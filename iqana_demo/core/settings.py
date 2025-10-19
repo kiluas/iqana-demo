@@ -33,7 +33,6 @@ def get_settings() -> Settings:
         cache_ttl_seconds=int(os.getenv("CACHE_TTL_SECONDS", "180")),
         default_user_id=os.getenv("DEFAULT_USER_ID", "demo-user"),
         cb_base_url=os.getenv("CB_BASE_URL", "https://api-public.sandbox.exchange.coinbase.com"),
-        # CORS: liberal for dev; we’ll tighten later
         cors_allow_origin=os.getenv("CORS_ALLOW_ORIGIN", "*"),
         cors_allow_headers=os.getenv("CORS_ALLOW_HEADERS", "Content-Type,Authorization"),
         cors_allow_methods=os.getenv("CORS_ALLOW_METHODS", "GET,POST,OPTIONS"),

@@ -21,40 +21,46 @@ COINBASE_USER_AGENT = os.getenv("CB_USER_AGENT", "iqana-demo/0.2")
 
 # --- Typing helpers ----------------------------------------------------------
 
+
 class _SecretsManager(Protocol):
     def get_secret_value(self, *, SecretId: str, VersionStage: str | None = None) -> Mapping[str, Any]: ...
+
 
 class CoinbaseSecret(TypedDict):
     api_key: str
     api_secret_b64: str
     passphrase: str
 
+
 def _strip_wrapping_quotes(s: str) -> str:
     s = s.strip()
-    if len(s) >= 2 and ((s[0] == s[-1] == '"') or (s[0] == s[-1] == "'")):
+    if len(s) >= 2 and ((s[0] == s[-1] == '"') or (s[0] == s[-1] == "'")):  # noqa: PLR2004
         return s[1:-1]
     return s
 
+
 def _validate_and_sanitize_secret(obj: Any) -> CoinbaseSecret:
     if not isinstance(obj, dict):
-        raise RuntimeError("SecretString must be a JSON object")  # noqa: TRY003
+        raise RuntimeError("SecretString must be a JSON object")  # noqa: TRY003, TRY004
     clean: dict[str, str] = {}
     for key in ("api_key", "api_secret_b64", "passphrase"):
-        v = obj.get(key) # type: ignore  # noqa: PGH003
+        v = obj.get(key)  # type: ignore  # noqa: PGH003
         if not isinstance(v, str) or not v.strip():
-            raise RuntimeError(f"Secret missing or invalid '{key}'")
+            raise RuntimeError(f"Secret missing or invalid '{key}'")  # noqa: TRY003
         clean[key] = _strip_wrapping_quotes(v)
 
     # base64 must decode cleanly
     try:
         base64.b64decode(clean["api_secret_b64"], validate=True)
-    except Exception as e:  # noqa: BLE001
-        raise RuntimeError("Secret 'api_secret_b64' is not valid base64") from e
+    except Exception as e:
+        raise RuntimeError("Secret 'api_secret_b64' is not valid base64") from e  # noqa: TRY003
 
     return cast(CoinbaseSecret, clean)
 
+
 def _ensure_path(path: str) -> str:
     return path if path.startswith("/") else "/" + path
+
 
 class CoinbaseClient:
     """
@@ -72,7 +78,7 @@ class CoinbaseClient:
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.secret_name = secret_name
-        self.secrets = secrets_client or boto3.client("secretsmanager") # type: ignore  # noqa: PGH003
+        self.secrets = secrets_client or boto3.client("secretsmanager")  # type: ignore  # noqa: PGH003
 
         self._secret_cache: CoinbaseSecret | None = None
         self._secret_cache_expiry: float = 0.0
@@ -102,12 +108,12 @@ class CoinbaseClient:
 
     def _load_secret_from_aws(self) -> CoinbaseSecret:
         try:
-            resp = self.secrets.get_secret_value(SecretId=self.secret_name, VersionStage="AWSCURRENT") # type: ignore  # noqa: PGH003
+            resp = self.secrets.get_secret_value(SecretId=self.secret_name, VersionStage="AWSCURRENT")  # type: ignore  # noqa: PGH003
         except ClientError as e:
             # This already includes KMS decryption behind the scenes; if KMS policy were wrong you'd see AccessDenied here.
             raise RuntimeError(f"Failed to read secret '{self.secret_name}': {e}") from e  # noqa: TRY003
 
-        secret_str = cast(str, resp.get("SecretString") or "{}") # type: ignore  # noqa: PGH003
+        secret_str = cast(str, resp.get("SecretString") or "{}")  # type: ignore  # noqa: PGH003
         parsed = json.loads(secret_str)
         return _validate_and_sanitize_secret(parsed)
 
@@ -142,9 +148,9 @@ class CoinbaseClient:
         prehash = f"{ts}{method.upper()}{path}{body_str}"
 
         secret_bytes = base64.b64decode(sec["api_secret_b64"])
-        sign_b64 = base64.b64encode(
-            hmac.new(secret_bytes, prehash.encode("utf-8"), hashlib.sha256).digest()
-        ).decode("ascii")
+        sign_b64 = base64.b64encode(hmac.new(secret_bytes, prehash.encode("utf-8"), hashlib.sha256).digest()).decode(
+            "ascii"
+        )
 
         headers = {
             "CB-ACCESS-KEY": sec["api_key"],
@@ -185,8 +191,8 @@ class CoinbaseClient:
 
         if isinstance(raw, Mapping):
             for key in ("accounts", "data"):
-                maybe = raw.get(key) # type: ignore  # noqa: PGH003
+                maybe = raw.get(key)  # type: ignore  # noqa: PGH003
                 if isinstance(maybe, list):
-                    return [dict(x) for x in maybe if isinstance(x, Mapping)] # type: ignore  # noqa: PGH003
+                    return [dict(x) for x in maybe if isinstance(x, Mapping)]  # type: ignore  # noqa: PGH003
 
         return []

@@ -1,7 +1,13 @@
 // apps/web/src/main.tsx
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
 import "./index.css";
 import { App } from "./App";
 import { login, handleCallback, logout, isAuthed } from "./auth/auth";
@@ -12,7 +18,9 @@ function Protected({ children }: { children: React.ReactNode }) {
 
 function LoginPage() {
   // auto-redirect to Cognito Hosted UI; if you prefer a button, comment this out and render one.
-  React.useEffect(() => { login(); }, []);
+  React.useEffect(() => {
+    login();
+  }, []);
   return (
     <div style={{ padding: 24 }}>
       <p>Redirecting to sign in / sign up…</p>
@@ -38,7 +46,9 @@ function CallbackPage() {
 }
 
 function LogoutPage() {
-  React.useEffect(() => { logout(); }, []);
+  React.useEffect(() => {
+    logout();
+  }, []);
   return <p style={{ padding: 24 }}>Signing out…</p>;
 }
 
@@ -50,8 +60,15 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/auth/callback" element={<CallbackPage />} />
         <Route path="/logout" element={<LogoutPage />} />
         {/* Everything else requires auth */}
-        <Route path="/*" element={<Protected><App /></Protected>} />
+        <Route
+          path="/*"
+          element={
+            <Protected>
+              <App />
+            </Protected>
+          }
+        />
       </Routes>
     </BrowserRouter>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

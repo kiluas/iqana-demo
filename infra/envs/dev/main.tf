@@ -414,4 +414,3 @@ output "cognito_domain" {
   # Hosted UI base domain
   value = "${module.cognito_jwt.domain_prefix}.auth.${local.region}.amazoncognito.com"
 }
-

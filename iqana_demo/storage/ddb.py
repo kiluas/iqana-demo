@@ -21,15 +21,15 @@ class HoldingsCache:
         self.table_name = table_name
 
         # Fully typed resource & table
-        self.dynamodb: DynamoDBServiceResource = client or boto3.resource("dynamodb") # type: ignore  # noqa: PGH003
-        self.table: Table = self.dynamodb.Table(table_name) # type: ignore  # noqa: PGH003
+        self.dynamodb: DynamoDBServiceResource = client or boto3.resource("dynamodb")  # type: ignore  # noqa: PGH003
+        self.table: Table = self.dynamodb.Table(table_name)  # type: ignore  # noqa: PGH003
 
     @staticmethod
     def _pk(user_id: str) -> str:
         return f"holdings#{user_id}"
 
     def read(self, user_id: str) -> dict[str, Any] | None:
-        resp: GetItemOutputTypeDef = self.table.get_item(Key={"pk": self._pk(user_id)}) # type: ignore  # noqa: PGH003
+        resp: GetItemOutputTypeDef = self.table.get_item(Key={"pk": self._pk(user_id)})  # type: ignore  # noqa: PGH003
 
         item = cast(dict[str, Any] | None, resp.get("Item"))
         if not item:

@@ -1,0 +1,20 @@
+name: terraform
+on:
+  pull_request:
+    paths: ["infra/**"]
+env:
+  TF_IN_AUTOMATION: true
+  TF_INPUT: false
+  ENV: dev
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform -chdir=infra/envs/${ENV} init -upgrade
+      - run: terraform -chdir=infra/envs/${ENV} fmt -check
+      - run: terraform -chdir=infra/envs/${ENV} validate
+      - run: terraform -chdir=infra/envs/${ENV} plan -out tfplan
+      - uses: actions/upload-artifact@v4
+        with: { name: tfplan, path: infra/envs/${{ env.ENV }}/tfplan }

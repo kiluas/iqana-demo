@@ -31,6 +31,3 @@ fi
 # 4) Zip it up
 ( cd .lambda-build && zip -qr "../${ZIP_PATH}" . )
 echo "Built ${ZIP_PATH}"
-
-
-

@@ -62,8 +62,6 @@ To enable the code coverage reports, see [here](https://shaneholloman.github.io/
 
 ## Releasing a new version
 
-
-
 ---
 
 Repository initiated with [shaneholloman/uvi](https://github.com/shaneholloman/uvi).

@@ -26,12 +26,15 @@ app.add_middleware(
 _coinbase = CoinbaseClient(base_url=settings.cb_base_url, secret_name=settings.secret_name)
 _cache = HoldingsCache(table_name=settings.ddb_table)
 
+
 def _now_epoch() -> int:
     return int(time.time())
+
 
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse(name=settings.app_name, version=settings.app_version, time=_now_epoch())
+
 
 @app.get("/holdings", response_model=HoldingsResponse)
 def holdings(refresh: bool = Query(False, description="Force refresh from Coinbase")) -> HoldingsResponse:
@@ -50,15 +53,15 @@ def holdings(refresh: bool = Query(False, description="Force refresh from Coinba
         currency = str(currency_raw)
         # balance fields vary across responses
         balance_field = acc.get("balance")
-        raw_balance = ( # type: ignore  # noqa: PGH003
-            balance_field.get("amount") if isinstance(balance_field, dict) else balance_field # type: ignore  # noqa: PGH003
+        raw_balance = (  # type: ignore  # noqa: PGH003
+            balance_field.get("amount") if isinstance(balance_field, dict) else balance_field  # type: ignore  # noqa: PGH003
         )
         if raw_balance is None:
             raw_balance = acc.get("available") or acc.get("amount")
         if raw_balance is None:
             raw_balance = "0"
         try:
-            balance = float(raw_balance) # type: ignore  # noqa: PGH003
+            balance = float(raw_balance)  # type: ignore  # noqa: PGH003
         except (TypeError, ValueError):
             balance = 0.0
         if balance <= 0:

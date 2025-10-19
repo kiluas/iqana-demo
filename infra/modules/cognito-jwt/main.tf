@@ -40,5 +40,3 @@ resource "aws_apigatewayv2_authorizer" "jwt" {
     audience = [aws_cognito_user_pool_client.web.id]
   }
 }
-
-

@@ -1,7 +1,7 @@
-const DOMAIN      = import.meta.env.VITE_COGNITO_DOMAIN;
-const CLIENT_ID   = import.meta.env.VITE_COGNITO_CLIENT_ID;
-const REDIRECT_URI= import.meta.env.VITE_COGNITO_REDIRECT_URI;
-const LOGOUT_URI  = import.meta.env.VITE_COGNITO_LOGOUT_URI;
+const DOMAIN = import.meta.env.VITE_COGNITO_DOMAIN;
+const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID;
+const REDIRECT_URI = import.meta.env.VITE_COGNITO_REDIRECT_URI;
+const LOGOUT_URI = import.meta.env.VITE_COGNITO_LOGOUT_URI;
 
 const KEY = {
   verifier: "pkce_verifier",
@@ -11,13 +11,20 @@ const KEY = {
   expires: "expires_at",
 } as const;
 
-export function getIdToken()  { return localStorage.getItem(KEY.id) || ""; }
-export function isAuthed()    { return !!getIdToken() && Date.now() < Number(localStorage.getItem(KEY.expires) || 0); }
+export function getIdToken() {
+  return localStorage.getItem(KEY.id) || "";
+}
+export function isAuthed() {
+  return (
+    !!getIdToken() &&
+    Date.now() < Number(localStorage.getItem(KEY.expires) || 0)
+  );
+}
 export type HeaderMap = Record<string, string>;
 
 export function authHeader(): HeaderMap {
   const h: HeaderMap = {};
-  const id  = localStorage.getItem(KEY.id);
+  const id = localStorage.getItem(KEY.id);
   const exp = Number(localStorage.getItem(KEY.expires) || 0);
   if (id && Date.now() < exp) {
     h.Authorization = `Bearer ${id}`;
@@ -49,8 +56,8 @@ export async function login() {
 
 export async function handleCallback() {
   const params = new URLSearchParams(window.location.search);
-  const code   = params.get("code");
-  const state  = params.get("state");
+  const code = params.get("code");
+  const state = params.get("state");
   if (!code) return false;
 
   const storedState = sessionStorage.getItem(KEY.state);

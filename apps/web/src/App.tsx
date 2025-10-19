@@ -43,7 +43,7 @@ export const App: React.FC = () => {
         setLoading(false);
       }
     },
-    []
+    [],
   );
 
   // initial fetch with clean abort on unmount
@@ -56,7 +56,9 @@ export const App: React.FC = () => {
   return (
     <div className="mx-auto max-w-3xl p-6 sm:p-10 space-y-6">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Iqana — Holdings</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Iqana — Holdings
+        </h1>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-500">API</span>
@@ -88,8 +90,12 @@ export const App: React.FC = () => {
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
-          <Badge color="slate">{data ? (data.cached ? "cached" : "fresh") : "—"}</Badge>
-          <Badge color="slate">fetched_at: {data ? fmtEpoch(data.fetched_at) : "—"}</Badge>
+          <Badge color="slate">
+            {data ? (data.cached ? "cached" : "fresh") : "—"}
+          </Badge>
+          <Badge color="slate">
+            fetched_at: {data ? fmtEpoch(data.fetched_at) : "—"}
+          </Badge>
           <Badge color="slate">count: {data ? data.count : "—"}</Badge>
           <Badge color="slate">source: {data?.source ?? "—"}</Badge>
         </div>
@@ -98,7 +104,10 @@ export const App: React.FC = () => {
       </section>
 
       <footer className="pt-8 text-center text-xs text-slate-500">
-        using <code>VITE_API_BASE={import.meta.env.VITE_API_BASE ?? "(not set)"}</code>
+        using{" "}
+        <code>
+          VITE_API_BASE={import.meta.env.VITE_API_BASE ?? "(not set)"}
+        </code>
       </footer>
     </div>
   );
