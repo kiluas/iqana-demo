@@ -9,33 +9,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      # Use uv (fast, lockfile-aware)
+      - uses: astral-sh/setup-uv@v3
 
-      # (Optional) speed up installs
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt', 'pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install deps
+      - name: Install Python + deps (dev group)
         run: |
-          python -m pip install -U pip
-          # your runtime deps (ignore if file missing)
-          [ -f requirements.txt ] && pip install -r requirements.txt || true
-          # install the package from this repo
-          pip install -e .
-          # test & lint tools
-          pip install pytest ruff
-          # fix test import crash from mypy_boto3_* at runtime
-          pip install "boto3-stubs[dynamodb,secretsmanager]"
+          uv python install 3.12
+          uv sync --group dev
 
       - name: Lint
-        run: ruff check .
+        run: uv run ruff check .
 
-      - name: Tests
-        run: pytest -q
+      - name: Tests (with coverage)
+        run: uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
