@@ -30,26 +30,38 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        # your pyproject requires >=3.10,<4.0, so drop 3.9
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12"]  # include 3.12 so Codecov can run on it
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install deps
+
+      - uses: astral-sh/setup-uv@v3
+
+      - name: Install Python + deps (dev group)
+      # use the matrix version for Python
         run: |
-          python -m pip install -U pip
-          [ -f requirements.txt ] && pip install -r requirements.txt || true
-          pip install -e .
-          pip install pytest mypy coverage
-      - name: Tests (coverage xml)
-        run: uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
-      - name: Type-check
-        run: mypy
-      - name: Upload coverage to Codecov (runs only on 3.12 & if token present)
-        if: matrix.python-version == '3.12' && env.CODECOV_TOKEN != ''
+          uv python install ${{ matrix.python-version }}
+          uv sync --group dev
+
+      - name: Tests (with coverage)
         env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          # minimal env so app import doesn't crash in CI
+          DEMO_MODE: "true"
+          CB_BASE_URL: "http://localhost"
+          CB_SECRET_NAME: "unit-test"
+          DDB_TABLE: "unit-test"
+          CACHE_TTL_SECONDS: "60"
+          APP_NAME: "Iqana Demo"
+          APP_VERSION: "0.0.0-ci"
+          DEFAULT_USER_ID: "ci-user"
+          WEB_ORIGIN: "http://localhost"
+        run: uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
+
+      - name: Type-check
+        run: uv run mypy
+
+      - name: Upload coverage to Codecov (only on 3.12, if token present)
+        if: matrix.python-version == '3.12' && secrets.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml

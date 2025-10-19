@@ -29,4 +29,8 @@ jobs:
           APP_VERSION: "0.0.0-ci"
           DEFAULT_USER_ID: "ci-user"
           WEB_ORIGIN: "http://localhost"
+          AWS_DEFAULT_REGION: "eu-west-3
+          AWS_REGION: "eu-west-3"
+          AWS_EC2_METADATA_DISABLED: "true"
+
         run: uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
