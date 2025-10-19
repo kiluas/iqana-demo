@@ -1,0 +1,8 @@
+/* stylelint-disable at-rule-no-unknown */
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+}
+
+button:disabled { opacity: .6; cursor: not-allowed; }
