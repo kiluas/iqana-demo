@@ -45,8 +45,7 @@ jobs:
           pip install -e .
           pip install pytest mypy coverage
       - name: Tests (coverage xml)
-        run: |
-          pytest --cov --cov-config=pyproject.toml --cov-report=xml
+        run: uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
       - name: Type-check
         run: mypy
       - name: Upload coverage to Codecov (runs only on 3.12 & if token present)

@@ -5,11 +5,8 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
-      # Use uv (fast, lockfile-aware)
       - uses: astral-sh/setup-uv@v3
 
       - name: Install Python + deps (dev group)
@@ -21,4 +18,15 @@ jobs:
         run: uv run ruff check .
 
       - name: Tests (with coverage)
+        env:
+          # Minimal settings so get_settings() doesn't crash in CI
+          DEMO_MODE: "true"
+          CB_BASE_URL: "http://localhost"
+          CB_SECRET_NAME: "unit-test"
+          DDB_TABLE: "unit-test"
+          CACHE_TTL_SECONDS: "60"
+          APP_NAME: "Iqana Demo"
+          APP_VERSION: "0.0.0-ci"
+          DEFAULT_USER_ID: "ci-user"
+          WEB_ORIGIN: "http://localhost"
         run: uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
