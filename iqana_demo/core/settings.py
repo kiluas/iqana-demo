@@ -21,8 +21,8 @@ class Settings:
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    ddb = os.getenv("DDB_TABLE", "")
-    secret = os.getenv("CB_SECRET_NAME", "")
+    ddb = os.getenv("DDB_TABLE", "iqana_holdings")
+    secret = os.getenv("CB_SECRET_NAME", "iqana_coinbase_exchange_sandbox")
     if not ddb or not secret:
         raise RuntimeError()
     return Settings(

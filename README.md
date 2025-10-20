@@ -1,67 +1,118 @@
-# iqana-demo
+# Iqana Demo — Coinbase Holdings (API + Web + AWS)
 
-[![Release](https://img.shields.io/github/v/release/kiluas/iqana-demo)](https://img.shields.io/github/v/release/kiluas/iqana-demo)
-[![Build status](https://img.shields.io/github/actions/workflow/status/kiluas/iqana-demo/main.yml?branch=main)](https://github.com/kiluas/iqana-demo/actions/workflows/main.yml?query=branch%3Amain)
-[![codecov](https://codecov.io/gh/kiluas/iqana-demo/branch/main/graph/badge.svg)](https://codecov.io/gh/kiluas/iqana-demo)
-[![Commit activity](https://img.shields.io/github/commit-activity/m/kiluas/iqana-demo)](https://img.shields.io/github/commit-activity/m/kiluas/iqana-demo)
-[![License](https://img.shields.io/github/license/kiluas/iqana-demo)](https://img.shields.io/github/license/kiluas/iqana-demo)
+End-to-end demo that ingests Coinbase balances and serves them via a FastAPI Lambda with a React SPA frontend.
 
-This is a demo repo for the Iqana interview process task.
+- **Backend:** FastAPI + Mangum on AWS Lambda, JWT-protected by API Gateway.
+- **Frontend:** React 19 + Vite, hosted from S3 behind CloudFront.
+- **Infra:** Terraform composable modules (`infra/modules/*`) with per-environment stacks (`infra/envs/*`).
+- **Auth:** Cognito Hosted UI (PKCE) feeding API Gateway JWT authorizer.
+- **Data:** DynamoDB cache, Secrets Manager for Coinbase keys, KMS-encrypted env vars.
 
-- **Github repository**: <https://github.com/kiluas/iqana-demo/>
-- **Documentation** <https://kiluas.github.io/iqana-demo/>
+Use this runbook to stand up the stack, iterate locally, and deploy updates. Additional documentation lives in:
 
-## Getting started with your project
-
-### 1. Create a New Repository
-
-First, create a repository on GitHub with the same name as this project, and then run the following commands:
-
-```bash
-git init -b main
-git add .
-git commit -m "init commit"
-git remote add origin git@github.com:kiluas/iqana-demo.git
-git push -u origin main
-```
-
-### 2. Set Up Your Development Environment
-
-Then, install the environment and the pre-commit hooks with
-
-```bash
-make install
-```
-
-This will also generate your `uv.lock` file
-
-### 3. Run the pre-commit hooks
-
-Initially, the CI/CD pipeline might be failing due to formatting issues. To resolve those run:
-
-```bash
-uv run pre-commit run -a
-```
-
-### 4. Commit the changes
-
-Lastly, commit the changes made by the two steps above to your repository.
-
-```bash
-git add .
-git commit -m 'Fix formatting issues'
-git push origin main
-```
-
-You are now ready to start development on your project!
-The CI/CD pipeline will be triggered when you open a pull request, merge to main, or when you create a new release.
-
-To finalize the set-up for publishing to PyPI, see [here](https://shaneholloman.github.io/uvi/features/publishing/#set-up-for-pypi).
-For activating the automatic documentation with MkDocs, see [here](https://shaneholloman.github.io/uvi/features/mkdocs/#enabling-the-documentation-on-github).
-To enable the code coverage reports, see [here](https://shaneholloman.github.io/uvi/features/codecov/).
-
-## Releasing a new version
+- [Architecture diagram](docs/assets/arch.png)
+- [Backend internals](docs/backend.md)
+- [Frontend architecture](docs/frontend.md)
+- [Infrastructure deep dive](docs/infra.md)
+- [Project structure overview](docs/project_structure.md)
+- [Framework decisions](docs/framework_decisions.md)
+- [Cost and reliability monitoring](docs/cost_rel_monitoring.md)
 
 ---
 
-Repository initiated with [shaneholloman/uvi](https://github.com/shaneholloman/uvi).
+## 1. Prerequisites
+- AWS account with permissions to create IAM roles, Lambda, API Gateway, Cognito, DynamoDB, Secrets Manager, S3, CloudFront, and KMS grants.
+- AWS CLI v2 configured with credentials for that account (`aws sts get-caller-identity` should succeed).
+- Terraform ≥ 1.6, Node.js ≥ 18, npm, Python 3.12, and `just` (https://github.com/casey/just).
+- Optional: `uv`/`pip` for local backend work, and an editor that loads `.env`.
+
+## 2. Environment Configuration
+1. Create or edit `.env` and populate the following keys:
+   ```dotenv
+      ENV=YOUR_ENV # e.g., dev|staging|prod
+
+      TF_VAR_project=YOUR_PROJECT_SLUG
+      TF_VAR_region=YOUR_AWS_REGION # e.g., eu-west-3
+      TF_VAR_web_origin=https://YOUR_CLOUDFRONT_DOMAIN # e.g., https://exampleabcdef.cloudfront.net
+      TF_VAR_secret_name=YOUR_SECRETS_MANAGER_NAME # e.g., coinbase_exchange_sandbox
+      TF_VAR_func_name=YOUR_LAMBDA_FUNCTION_NAME
+      TF_VAR_api_name=YOUR_API_GATEWAY_NAME
+      ZIP_PATH=path/to/your/bundle.zip
+
+      VITE_API_BASE=https://YOUR_API_GATEWAY_BASE_URL
+      VITE_COGNITO_DOMAIN=YOUR_COGNITO_DOMAIN # e.g., your-app.auth.eu-west-3.amazoncognito.com
+      VITE_COGNITO_CLIENT_ID=YOUR_COGNITO_APP_CLIENT_ID
+      VITE_COGNITO_REGION=YOUR_COGNITO_REGION # e.g., eu-west-3
+      VITE_COGNITO_REDIRECT_URI=https://YOUR_WEB_ORIGIN/auth/callback
+      VITE_COGNITO_LOGOUT_URI=https://YOUR_WEB_ORIGIN/login
+
+   ```
+   Adjust values per environment (e.g., different region, project slug, or Cognito domain).
+2. Ensure your KMS alias (`TF_VAR_kms_alias`, default `iqana-secrets`) already exists or override the variable before provisioning.
+3. Make utility scripts executable once: `chmod +x scripts/**/*.sh`.
+
+## 3. Provision Cloud Infrastructure
+All commands run from the repo root (`ENV` defaults to `dev` via `.env`).
+
+```bash
+# sanity check required variables
+just env-check
+
+# create remote state bucket + DynamoDB lock table (idempotent)
+just tf-remote-state
+
+# initialise Terraform backend/provider files and run terraform init
+just tf-init
+
+# review the plan (fmt + validate run automatically)
+just tf-plan
+
+# apply the stack (Lambda, API GW, Cognito, DynamoDB, S3/CloudFront, VPC, etc.)
+just tf-apply
+```
+
+Terraform outputs the API endpoint, Lambda name, Cognito domain/client, CloudFront info, and NAT EIP. Store these in `.env`, frontend configs, and secrets managers as needed.
+
+## 4. Deploy Backend Code
+Terraform seeds Lambda with a bootstrap stub—push the real package once infra is ready.
+
+```bash
+# Build the Lambda zip (scripts/deploy/build_zip_docker.sh handles deps)
+just deploy-code
+```
+
+`deploy-code` rebuilds the bundle, uploads it via `aws lambda update-function-code`, and publishes the new version.
+
+## 5. Deploy Frontend
+Frontend deploys need the S3 bucket and CloudFront distribution outputs (`WEB_BUCKET`, `CLOUDFRONT_ID`).
+
+```bash
+export WEB_BUCKET=<s3 bucket name from module.frontend (e.g., iqana-web-dev-eu-west-3)>
+export CLOUDFRONT_ID=<cloudfront distribution ID (run: aws cloudfront list-distributions --query "DistributionList.Items[].Id")>
+
+# Build SPA with the Cognito + API env vars from .env
+just web-build
+
+# Sync static assets to S3 and invalidate CloudFront
+just web-deploy-s3
+```
+
+`web-deploy-s3` uploads immutable assets with long cache headers and forces `index.html` to bypass caches. Use the AWS CLI or console to confirm the CloudFront distribution ID before creating invalidations.
+
+## 6. Local Development
+- **Backend:** Install deps (`pip install -e .[dev]`), export the same env vars as Lambda, then run `uv run uvicorn iqana_demo.api.app:app --host 0.0.0.0 --port 8000 --reload`. Use dummy secrets or mock AWS clients when iterating locally (see `docs/backend.md`).
+- **Frontend:** `cd apps/web && npm ci && npm run dev` starts Vite on http://localhost:5173. Configure Cognito to allow the local redirect URI if you need full auth; otherwise stub responses with a local proxy (see `docs/frontend.md`).
+- **Infrastructure changes:** Modify Terraform in `infra/envs/<env>` or `infra/modules/*`, then rerun `just tf-plan` / `just tf-apply`. Use `just tf-format` to keep formatting consistent.
+
+## 7. CI/CD
+GitHub Actions (see `.github/workflows/main.yml`) run lint/tests, Terraform plan/apply, and web deploys. Ensure repository secrets provide AWS credentials with matching permissions before enabling live deploys.
+
+## 8. Troubleshooting
+- Remote state errors → confirm AWS credentials and that `just tf-remote-state` succeeded.
+- Lambda still returns “bootstrap ok” → rerun `just deploy-code`; Terraform ignores the Lambda `filename` to avoid drift.
+- 401s after login → verify Cognito domain/client output matches the frontend `.env` (`docs/frontend.md`).
+- Coinbase API blocked → whitelist the NAT EIP from Terraform output (`docs/infra.md`).
+- Need more detail? Check:
+  - Backend internals: `docs/backend.md`
+  - Frontend architecture: `docs/frontend.md`
+  - Infrastructure deep dive: `docs/infra.md`

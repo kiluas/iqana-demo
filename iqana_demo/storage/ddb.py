@@ -21,7 +21,7 @@ class HoldingsCache:
         self.table_name = table_name
 
         # Fully typed resource & table
-        self.dynamodb: DynamoDBServiceResource = client or boto3.resource("dynamodb")  # type: ignore  # noqa: PGH003
+        self.dynamodb = client or boto3.resource("dynamodb")  # type: ignore  # noqa: PGH003
         self.table: Table = self.dynamodb.Table(table_name)  # type: ignore  # noqa: PGH003
 
     @staticmethod
